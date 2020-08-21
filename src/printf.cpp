@@ -73,7 +73,7 @@ static void puth(unsigned n)
     PUTC(hex[n & 15]);
 }
 
-int printf(const char *format, ...)
+int printf(char *format, ...)
 {
     char c;
     int i;

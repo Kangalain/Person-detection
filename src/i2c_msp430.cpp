@@ -1,34 +1,13 @@
-#include <msp430.h> 
-#include <stdint.h>
-#include <string.h>
-/**
- * main.c
- */
 /*
-//------------ UART_CABLE communication ------------------------
-void uart_cable_init() {
-    // uart communicaton setup
-    // P2.1/UCA0RXD (to MCU from the desktop)
-    // P2.0/UCA0TDX (from MCU to the desktop)
-    P2SEL1 |= (BIT1 | BIT0);
-    P2SEL0 &= ~(BIT1 | BIT0);
+ * i2c_msp430.cpp
+ *
+ *  Created on: Aug 20, 2020
+ *      Author: Kangabire
+ *      These function definitions are for msp430
+ */
+#include <msp430.h>
+#include "i2c_msp430.h"
 
-    UCA0CTLW0 |= UCSWRST;
-    // Setting Baud rate! Number of symbols we can send per second
-    UCA0CTLW0 |= UCSSEL_2; // CLK = SMCLK 1MHz
-    UCA0BRW = 6; //UCBRx
-    UCA0MCTLW |= UCOS16 | UCBRF_6 | 0x2000;
-    UCA0CTLW0 &= ~UCSWRST; // Release eUSCI for operation
-
-}
-void uart_cable_write(uint8_t *data) {
-    while(!(UCA0IFG & UCTXIFG)); // busy wait until transmitting or receiving interrupt is over
-    UCA0TXBUF = *data;
-    _delay_cycles(100000);
-}
-
-//---------------I2C protocol-----------------------
-#define SLAVE_ADDRESS 0x69;
 void i2c_init() {
     // Configure GPIO
     P1OUT &= ~BIT0;             // Clear P1.0 output latch
@@ -55,30 +34,34 @@ void i2c_init() {
     UCB2CTLW0 &= ~UCSWRST;      // Clear reset bit to start operation
     __delay_cycles(50);
 }
-void i2c_write(uint8_t reg_addr, uint8_t data) {
-    UCB2I2CSA = SLAVE_ADDRESS; // Set slave address
+void i2c_write(uint8_t reg_addr,uint8_t *tx_buffer, uint8_t quantity,uint8_t AMG88xx_ADDRESS) {
+    UCB2I2CSA = AMG88xx_ADDRESS; // Set slave address
     UCB2CTLW0 |= UCTR | UCTXSTT; // Start request as transmitter
     while(!(UCB2IFG & UCTXIFG)); // Wait until TXBUFF is empty
     UCB2TXBUF = reg_addr; // Send first data byte
     while(UCB1CTLW0 & UCTXSTT); // Wait for slave's response
     if (UCB2IFG & UCNACKIFG) { // If there was no response
-    UCB2IFG &= ~UCNACKIFG; // Clear NACK flag
-    UCB2CTLW0 |= UCTXSTP; // Request a stop
-    while (UCB2CTLW0 & UCTXSTP); // And wait until stop was actually sent
-    UCB2IFG &= ~UCSTPIFG; // Clear stop flag (not actually using this..)
+        UCB2IFG &= ~UCNACKIFG; // Clear NACK flag
+        UCB2CTLW0 |= UCTXSTP; // Request a stop
+        while (UCB2CTLW0 & UCTXSTP); // And wait until stop was actually sent
+        UCB2IFG &= ~UCSTPIFG; // Clear stop flag (not actually using this..)
     }
     else { // If there was a reply from the slave,
-        while(!(UCB2IFG & UCTXIFG));
-        UCB2TXBUF = data;
+        uint8_t j;
+
+        for(j=0; j<quantity;j++){
+            while(!(UCB2IFG & UCTXIFG));
+            UCB2TXBUF = *tx_buffer++;
+        }
     }
     while(!(UCB2IFG & UCTXIFG)); // Wait for the last byte to be loaded to shift register
     UCB2CTLW0 |= UCTXSTP; // Request a stop condition
     while (UCB2CTLW0 & UCTXSTP); // Wait until stop was sent
     UCB2IFG &= ~UCTXIFG; // Clear TX flag
 }
-void i2c_read(uint8_t reg_addr, uint8_t quantity,uint8_t *rx_buffer) {
+void i2c_read(uint8_t reg_addr,uint8_t *rx_buffer, uint8_t quantity, uint8_t AMG88xx_ADDRESS) {
     uint8_t i;
-    UCB2I2CSA = SLAVE_ADDRESS;             // Set slave address
+    UCB2I2CSA = AMG88xx_ADDRESS;             // Set slave address
     UCB2CTLW0 |= UCTR | UCTXSTT;            // Start request as transmitter
     while(!(UCB2IFG & UCTXIFG));            // Wait until TXBUFF is empty
     UCB2TXBUF = reg_addr;                   // Send first data byte
@@ -94,43 +77,11 @@ void i2c_read(uint8_t reg_addr, uint8_t quantity,uint8_t *rx_buffer) {
         // Generate I2C stop condition (with a nack before that, which is handled by hardware automatically)
         // Only do this for the last byte
         if(i == quantity - 1) UCB2CTL1 |= UCTXSTP;
-        *rx_buffer++ = UCB2RXBUF;               // Put data into buffer
+        rx_buffer[i] = UCB2RXBUF;               // Put data into buffer
     }
     while (UCB2CTLW0 & UCTXSTP);            // Wait until stop was sent
 }
 
-//----------- thermal camera read buffer ---------------
 
-int main(void){
-    WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
-    PM5CTL0 &= ~LOCKLPM5; // Disable GPIO power
 
-    // initializing buffer rx_buffer
-    uint8_t rx_buffer[64];
-    unsigned int count = 0;
-    while(count<64){ //initialize rx_buffer to zero
-        rx_buffer[count] = 0;
-    }
-    //creating a pointer to the rx_buffer
-    //uint8_t *rx_buffer_pointer;
-    //rx_buffer_pointer = rx_buffer;
 
-    //read from thermal camera
-    //uint8_t reg_add = 0x00;
-    //i2c_init();
-    //i2c_read(reg_add,64,rx_buffer_pointer);
-
-    //--------------------- UART communication -----------------------
-
-    count = 0;
-    uint8_t data;
-    uint8_t *rx_buffer_pointer;
-    rx_buffer_pointer = rx_buffer;
-    while(count<64){
-        uart_cable_write(rx_buffer_pointer);
-        rx_buffer_pointer++;
-        ++count;
-    }
-    return 0;
-}
-*/
