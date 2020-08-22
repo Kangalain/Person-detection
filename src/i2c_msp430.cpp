@@ -21,7 +21,7 @@ void i2c_init() {
                 UCMST         | // Master mode
                 UCSYNC        | // Synchronous mode
                 UCMODE_3      | // I2C mode
-                UCSSEL__SMCLK | // Select SMCLK
+                UCSSEL__ACLK | // Select ACLK 10kHz
                 UCTR          | // Transmitter mode
                 UCSWRST       | // Don't release reset (yet)
                 0;
@@ -30,7 +30,9 @@ void i2c_init() {
                 UCASTP_0      | // Automatic STOP condition generation (disabled)
                 UCGLIT_0      | // Deglitch time (50ns)
                 0;
-    UCB2BRW = 10;               // Bit clock divider 1M/10 = 100kHz
+    UCB2BRW = 2;               // Bit clock divider 10kHz/2 = 5kHz
+    UCB2IE |= UCRXIE0; //enable interrupts
+    UCB2IE |= UCTXIE0; // enable interrupts
     UCB2CTLW0 &= ~UCSWRST;      // Clear reset bit to start operation
     __delay_cycles(50);
 }
@@ -66,14 +68,16 @@ void i2c_read(uint8_t reg_addr,uint8_t *rx_buffer, uint8_t quantity, uint8_t AMG
     while(!(UCB2IFG & UCTXIFG));            // Wait until TXBUFF is empty
     UCB2TXBUF = reg_addr;                   // Send first data byte
     while(UCB1CTLW0 & UCTXSTT);             // Wait for slave's response
-    while(!(UCB2IFG & UCTXIFG));            // Wait for the last byte to be loaded to shift register
+    while(!(UCB2IFG & UCTXIFG0));            // Wait for the last byte to be loaded to shift register
     UCB2CTLW0 |= UCTXSTP;                   // Request a stop condition
     while (UCB2CTLW0 & UCTXSTP);            // Wait until stop was sent
     UCB2IFG &= ~UCTXIFG;                    // Clear TX flag
     UCB2CTLW0 &= ~UCTR;                     // Put I2C bus in receive mode
     UCB2CTLW0 |= UCTXSTT;                   // Start request as a receiver
+
+    uint8_t useless_data;
     for(i=0;i<quantity;i++) {               // Loop until data is collected
-        while(!(UCB2IFG & UCRXIFG));        // Wait until RXBUF is full
+        while(!(UCB2IFG & UCRXIFG0));        // Wait until RXBUF is full
         // Generate I2C stop condition (with a nack before that, which is handled by hardware automatically)
         // Only do this for the last byte
         if(i == quantity - 1) UCB2CTL1 |= UCTXSTP;
