@@ -34,7 +34,6 @@ void i2c_init() {
     UCB2IE |= UCRXIE0; //enable interrupts
     UCB2IE |= UCTXIE0; // enable interrupts
     UCB2CTLW0 &= ~UCSWRST;      // Clear reset bit to start operation
-    __delay_cycles(50);
 }
 void i2c_write(uint8_t reg_addr,uint8_t *tx_buffer, uint8_t quantity,uint8_t AMG88xx_ADDRESS) {
     UCB2I2CSA = AMG88xx_ADDRESS; // Set slave address
@@ -75,7 +74,6 @@ void i2c_read(uint8_t reg_addr,uint8_t *rx_buffer, uint8_t quantity, uint8_t AMG
     UCB2CTLW0 &= ~UCTR;                     // Put I2C bus in receive mode
     UCB2CTLW0 |= UCTXSTT;                   // Start request as a receiver
 
-    uint8_t useless_data;
     for(i=0;i<quantity;i++) {               // Loop until data is collected
         while(!(UCB2IFG & UCRXIFG0));        // Wait until RXBUF is full
         // Generate I2C stop condition (with a nack before that, which is handled by hardware automatically)

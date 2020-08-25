@@ -43,9 +43,7 @@ int main(void)
 	uint8_t width = 16;
 	uint8_t height = 8;
 	uint8_t temp_data=0;
-	uint8_t threshold = 102;
-	uint8_t row_odd = 0;
-	uint8_t column_odd = 0;
+	uint8_t threshold = 110;
 
 	//------------ reading and displaying values from the thermal camera one by one -----------
 	x = 0;
@@ -70,7 +68,16 @@ int main(void)
 	        else{
 	            display.fill_rect(x, y, width,height, SSD1306_BLACK);
 	        }
-
+	    }
+	    //sending data over UART communication
+	    uint8_t send_request;
+	    send_request= UCA0RXBUF;
+	    if(send_request){
+	        __delay_cycles(1000);
+	        for(i=0;i<size;i++){
+	            temp_data = buf[i];
+	            io_putchar(temp_data);
+	        }
 	    }
 	    display.refresh();
 	    __delay_cycles(10000);
