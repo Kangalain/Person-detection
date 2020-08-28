@@ -75,7 +75,7 @@ public:
 
   bool begin(uint8_t addr = AMG88xx_ADDRESS);
 
-  void readPixels(uint8_t *buf, uint8_t size = AMG88xx_PIXEL_ARRAY_SIZE);
+  void readPixels(uint16_t *buf, uint8_t size = AMG88xx_PIXEL_ARRAY_SIZE);
   uint16_t readThermistor();
 
   void setMovingAverageMode(bool mode);
@@ -91,7 +91,7 @@ public:
 
   // this will manually set hysteresis
   void setInterruptLevels(float high, float low, float hysteresis);
-
+  float int12ToFloat(uint16_t val);
 private:
   uint8_t _i2caddr;
 
@@ -102,9 +102,8 @@ private:
   void read(uint8_t reg, uint8_t *buf, uint8_t num);
   void write(uint8_t reg, uint8_t *buf, uint8_t num);
   void _i2c_init();
-
   float signedMag12ToFloat(uint16_t val);
-  float int12ToFloat(uint16_t val);
+
 
   // The power control register
   struct pctl {

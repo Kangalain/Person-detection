@@ -35,6 +35,7 @@ def read_serial(serial_object):
         count +=1
        
     thermal_data = np.array(thermal_data)
+    
     thermal_data = thermal_data.reshape((8,-1))
 
     return thermal_data

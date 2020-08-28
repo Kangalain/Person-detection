@@ -1,5 +1,5 @@
 from display import display_data
-from serial_port import open_serial
+from serial_port import open_serial, close_serial,read_serial
 
 if __name__ == '__main__':
     # Connect to serial port first
@@ -9,6 +9,7 @@ if __name__ == '__main__':
     #initializing the serial port
     
     mspserial = open_serial()
+    
     display_data(mspserial)
     
     close_serial(mspserial)

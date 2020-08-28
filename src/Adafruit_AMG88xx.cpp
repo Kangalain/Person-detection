@@ -176,30 +176,20 @@ uint16_t Adafruit_AMG88xx::readThermistor() {
     @return up to 64 bytes of pixel data in buf
 */
 /**************************************************************************/
-void Adafruit_AMG88xx::readPixels(uint8_t *buf, uint8_t size) {
-  /*
-  uint16_t recast;
-  float converted;
-  */
-  uint8_t bytesToRead;
-  if(size < AMG88xx_PIXEL_ARRAY_SIZE){
-      bytesToRead = size;
-  }
-  else{
-      bytesToRead = AMG88xx_PIXEL_ARRAY_SIZE;
-  }
+void Adafruit_AMG88xx::readPixels(uint16_t *buf, uint8_t size) {
 
-  //uint8_t rawArray[bytesToRead];
-  this->read(AMG88xx_PIXEL_OFFSET, buf, bytesToRead);
-  /*
+  uint16_t recast;
+
+  uint8_t rawArray[AMG88xx_PIXEL_ARRAY_SIZE << 1];
+  this->read(AMG88xx_PIXEL_OFFSET, rawArray, size << 1);
+
   for (int i = 0; i < size; i++) {
     uint8_t pos = i << 1;
     recast = ((uint16_t)rawArray[pos + 1] << 8) | ((uint16_t)rawArray[pos]);
 
-    converted = int12ToFloat(recast) * AMG88xx_PIXEL_TEMP_CONVERSION;
-    buf[i] = converted;
+    buf[i] = recast;
   }
-  */
+
 }
 
 /**************************************************************************/
