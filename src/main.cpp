@@ -42,14 +42,17 @@ int main(void)
 
 	display.refresh();
 
-	uint8_t i;
+	uint8_t i;  //used in for loop
+	uint8_t j;  // used in for loop
+	uint8_t blink=1; //controls the blinking
+	uint8_t blink_color;
 	uint8_t x;
 	uint8_t x_offset = 32;
 	uint8_t y;
 	uint8_t width = 8;
 	uint8_t height = 8;
 	uint8_t temp_data;
-	uint8_t threshold =125;
+	uint8_t threshold =113;
 	int pixel_on;
 	float above_threshold;
 	uint16_t send_raw_data;
@@ -60,7 +63,9 @@ int main(void)
 	y = 0;
 
 	while(1){
+
 	    thermal_camera.readPixels(buf,size);
+	    //-----------------Displaying IR temperature readings----------------------------
 	    for(i=0;i<size;i++){
 	        //----read in data------
 
@@ -81,6 +86,27 @@ int main(void)
 	            display.fill_rect(x+x_offset, y, width,height, SSD1306_BLACK);
 	        }
 	    }
+
+	    //---------------- Making the blinking on the display ------------------------
+	    /*
+	    if(blink){
+	        blink_color = SSD1306_WHITE;
+	        blink = 0;
+	    }
+	    else{
+	        blink_color = SSD1306_BLACK;
+	        blink =1;
+	    }
+
+	    for(i=1; i<8;i++){
+	        y = i<<3 ;
+	        for(j=1;i<4;j++){
+	            x = j<<3 ;
+	            display.set_xy(x, y, blink_color);
+	            display.set_xy(x+96, y, blink_color);
+	        }
+	    }
+        */
 	    //sending data over UART communication
 	    uint8_t send_request;
 	    send_request= UCA0RXBUF;

@@ -30,12 +30,14 @@ def read_serial(serial_object):
 
     while count<thermal_size:
         data_temp = serial_object.read()
-        data_temp = IR_conversion_factor*ord(data_temp)
+        data_temp = ord(data_temp)
         thermal_data.append(data_temp)
         count +=1
        
     thermal_data = np.array(thermal_data)
+    #thermal_data = np.array(np.where(thermal_data>113,255,0))
     
-    thermal_data = thermal_data.reshape((8,-1))
+    #thermal_data = thermal_data.reshape((8,-1))
+    #thermal_data.T
 
     return thermal_data
